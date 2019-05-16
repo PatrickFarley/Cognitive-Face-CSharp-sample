@@ -17,7 +17,7 @@ namespace FaceTutorial
     {
         // Replace <SubscriptionKey> with your valid subscription key.
         // For example, subscriptionKey = "0123456789abcdef0123456789ABCDEF"
-        private const string subscriptionKey = "<SubscriptionKey>";
+        private const string subscriptionKey = "2d2c5f157e144c809225371580272b84";
 
         // Replace or verify the region.
         //
@@ -29,7 +29,7 @@ namespace FaceTutorial
         // region, so if you are using a free trial subscription key, you should
         // not need to change this region.
         private const string faceEndpoint =
-            "https://westcentralus.api.cognitive.microsoft.com";
+            "https://westus.api.cognitive.microsoft.com";
 
         private readonly IFaceClient faceClient = new FaceClient(
             new ApiKeyServiceClientCredentials(subscriptionKey),
@@ -38,7 +38,7 @@ namespace FaceTutorial
         // The list of detected faces.
         private IList<DetectedFace> faceList;
         // The list of descriptions for the detected faces.
-        private string[] faceDescriptions;
+        private string[] faces;
         // The resize factor for the displayed image.
         private double resizeFactor;
 
@@ -105,8 +105,9 @@ namespace FaceTutorial
                 double dpi = bitmapSource.DpiX;
                 // Some images don't contain dpi info.
                 resizeFactor = (dpi == 0) ? 1 : 96 / dpi;
-                faceDescriptions = new String[faceList.Count];
+                faces = new String[faceList.Count];
 
+                // draw
                 for (int i = 0; i < faceList.Count; ++i)
                 {
                     DetectedFace face = faceList[i];
@@ -123,13 +124,15 @@ namespace FaceTutorial
                             )
                     );
 
-                    // Store the face description.
-                    faceDescriptions[i] = FaceDescription(face);
-                }
+                    // Draw landmarks on face.
+                    DrawFaceLandmarks(face.FaceLandmarks, drawingContext);
 
+                    // Store the face description.
+                    faces[i] = GetFaceDescriptionString(face);
+                }
                 drawingContext.Close();
 
-                // Display the image with the rectangle around the face.
+                // Display the image with the drawings on the face.
                 RenderTargetBitmap faceWithRectBitmap = new RenderTargetBitmap(
                     (int)(bitmapSource.PixelWidth * resizeFactor),
                     (int)(bitmapSource.PixelHeight * resizeFactor),
@@ -176,7 +179,7 @@ namespace FaceTutorial
                 if (mouseXY.X >= left && mouseXY.X <= left + width &&
                     mouseXY.Y >= top && mouseXY.Y <= top + height)
                 {
-                    faceDescriptionStatusBar.Text = faceDescriptions[i];
+                    faceDescriptionStatusBar.Text = faces[i];
                     mouseOverFace = true;
                     break;
                 }
@@ -207,7 +210,7 @@ namespace FaceTutorial
                     // the third argument specifies not to return face landmarks.
                     IList<DetectedFace> faceList =
                         await faceClient.Face.DetectWithStreamAsync(
-                            imageFileStream, true, false, faceAttributes);
+                            imageFileStream, true, true, faceAttributes);
                     return faceList;
                 }
             }
@@ -226,7 +229,7 @@ namespace FaceTutorial
         }
 
         // Creates a string out of the attributes describing the face.
-        private string FaceDescription(DetectedFace face)
+        private string GetFaceDescriptionString(DetectedFace face)
         {
             StringBuilder sb = new StringBuilder();
 
@@ -283,6 +286,49 @@ namespace FaceTutorial
 
             // Return the built string.
             return sb.ToString();
+        }
+
+        // draw points on the given set of face landmarks
+        private void DrawFaceLandmarks(FaceLandmarks landmarks, DrawingContext drawingContext)
+        {
+            double radius = 0.5;
+            double thickness = 2;
+            SolidColorBrush brush = Brushes.White;
+
+            drawingContext.DrawEllipse(brush, new Pen(brush, thickness), CoordToPoint(landmarks.EyebrowLeftInner), radius, radius);
+            drawingContext.DrawEllipse(brush, new Pen(brush, thickness), CoordToPoint(landmarks.EyebrowLeftOuter), radius, radius);
+            drawingContext.DrawEllipse(brush, new Pen(brush, thickness), CoordToPoint(landmarks.EyebrowRightInner), radius, radius);
+            drawingContext.DrawEllipse(brush, new Pen(brush, thickness), CoordToPoint(landmarks.EyebrowRightOuter), radius, radius);
+            drawingContext.DrawEllipse(brush, new Pen(brush, thickness), CoordToPoint(landmarks.EyeLeftBottom), radius, radius);
+            drawingContext.DrawEllipse(brush, new Pen(brush, thickness), CoordToPoint(landmarks.EyeLeftInner), radius, radius);
+            drawingContext.DrawEllipse(brush, new Pen(brush, thickness), CoordToPoint(landmarks.EyeLeftOuter), radius, radius);
+            drawingContext.DrawEllipse(brush, new Pen(brush, thickness), CoordToPoint(landmarks.EyeLeftTop), radius, radius);
+            drawingContext.DrawEllipse(brush, new Pen(brush, thickness), CoordToPoint(landmarks.EyeLeftTop), radius, radius);
+            drawingContext.DrawEllipse(brush, new Pen(brush, thickness), CoordToPoint(landmarks.EyeRightBottom), radius, radius);
+            drawingContext.DrawEllipse(brush, new Pen(brush, thickness), CoordToPoint(landmarks.EyeRightInner), radius, radius);
+            drawingContext.DrawEllipse(brush, new Pen(brush, thickness), CoordToPoint(landmarks.EyeRightOuter), radius, radius);
+            drawingContext.DrawEllipse(brush, new Pen(brush, thickness), CoordToPoint(landmarks.EyeRightTop), radius, radius);
+            drawingContext.DrawEllipse(brush, new Pen(brush, thickness), CoordToPoint(landmarks.MouthLeft), radius, radius);
+            drawingContext.DrawEllipse(brush, new Pen(brush, thickness), CoordToPoint(landmarks.MouthRight), radius, radius);
+            drawingContext.DrawEllipse(brush, new Pen(brush, thickness), CoordToPoint(landmarks.NoseLeftAlarOutTip), radius, radius);
+            drawingContext.DrawEllipse(brush, new Pen(brush, thickness), CoordToPoint(landmarks.NoseLeftAlarTop), radius, radius);
+            drawingContext.DrawEllipse(brush, new Pen(brush, thickness), CoordToPoint(landmarks.NoseRightAlarOutTip), radius, radius);
+            drawingContext.DrawEllipse(brush, new Pen(brush, thickness), CoordToPoint(landmarks.NoseRightAlarTop), radius, radius);
+            drawingContext.DrawEllipse(brush, new Pen(brush, thickness), CoordToPoint(landmarks.NoseRootLeft), radius, radius);
+            drawingContext.DrawEllipse(brush, new Pen(brush, thickness), CoordToPoint(landmarks.NoseRootRight), radius, radius);
+            drawingContext.DrawEllipse(brush, new Pen(brush, thickness), CoordToPoint(landmarks.NoseTip), radius, radius);
+            drawingContext.DrawEllipse(brush, new Pen(brush, thickness), CoordToPoint(landmarks.PupilLeft), radius, radius);
+            drawingContext.DrawEllipse(brush, new Pen(brush, thickness), CoordToPoint(landmarks.PupilRight), radius, radius);
+            drawingContext.DrawEllipse(brush, new Pen(brush, thickness), CoordToPoint(landmarks.UnderLipBottom), radius, radius);
+            drawingContext.DrawEllipse(brush, new Pen(brush, thickness), CoordToPoint(landmarks.UnderLipTop), radius, radius);
+            drawingContext.DrawEllipse(brush, new Pen(brush, thickness), CoordToPoint(landmarks.UpperLipBottom), radius, radius);
+            drawingContext.DrawEllipse(brush, new Pen(brush, thickness), CoordToPoint(landmarks.UpperLipTop), radius, radius);
+
+        }
+
+        private Point CoordToPoint(Coordinate coord)
+        {
+            return new Point(coord.X, coord.Y);
         }
     }
 }
